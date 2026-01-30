@@ -2,8 +2,6 @@
 
 A modern family calendar and AI assistant PWA built with Next.js. FamilyHub helps families coordinate schedules, find travel opportunities, and stay informed with weather and traffic updates.
 
-**Live Demo:** [https://familyhub-pied.vercel.app](https://familyhub-pied.vercel.app)
-
 ## ✨ Features
 
 ### 📅 Smart Calendar Management
@@ -12,14 +10,16 @@ A modern family calendar and AI assistant PWA built with Next.js. FamilyHub help
 - **Custom event types** with personalized colors and icons
 - **School calendar sync** via URL scraping (websites and PDF files)
 - **Flight restriction tracking** to mark dates when family members can't travel
+- **Time support** - events can have optional start/end times
 
 ### 🤖 AI Assistant
-- **Bilingual support** (English & Korean) - responds in your language
+- **Bilingual support** (English & Korean) - responds in your language with formal Korean (존댓말)
 - **Voice input/output** with speech recognition and synthesis
 - **Natural language commands** for calendar management
 - **Smart travel suggestions** - finds dates when everyone is available
 - **Bulk import** flight restrictions via voice or text
 - **Time-aware** - knows current time and timezone
+- **User-aware** - identifies signed-in user for personalized responses
 
 ### 📱 Mobile-First PWA
 - **Installable PWA** - add to home screen on iOS/Android
@@ -28,16 +28,24 @@ A modern family calendar and AI assistant PWA built with Next.js. FamilyHub help
 - **Voice input** with tap-to-speak button
 - **Auto voice response** when using speech input
 
-### 🌤️ Smart Briefings
-- **Weather updates** for all configured locations
-- **Traffic/commute** estimates between locations
-- **Today's events** summary
-- **Voice-enabled** - tap 🌅 for a spoken briefing
+### 🌅 Morning & Evening Briefings
+- **Persistent buttons** in chat for quick access to briefings
+- **Morning briefing** includes:
+  - Weather for all family locations
+  - Sunrise/sunset times
+  - Traffic from home to work/school
+  - Today's calendar events
+- **Evening briefing** includes:
+  - Real-time traffic from work to home
+  - Traffic from other locations (e.g., church) to home
+  - Tomorrow's schedule preview
+- **Voice-enabled** - briefings are read aloud
 
 ### 📍 Location Management
 - **Multiple saved locations** with custom emojis
+- **Auto-geocoding** - automatically converts addresses to coordinates
 - **Weather lookup** by city/address (auto-extracts city from full addresses)
-- **Traffic routing** between any configured locations
+- **Traffic routing** between any configured locations using real-time data
 - **Smart shortcuts** - emoji buttons learn from your queries
 
 ### 🎯 Smart Query Shortcuts
@@ -51,6 +59,11 @@ A modern family calendar and AI assistant PWA built with Next.js. FamilyHub help
 - **LocalStorage backup** for offline access
 - **Automatic sync** on every change
 
+### 🔐 Multi-User Support
+- **Google OAuth** authentication
+- **Email allowlist** to restrict access to family members
+- **User identification** - AI knows who is asking and personalizes responses
+
 ---
 
 ## 🚀 Getting Started
@@ -58,45 +71,77 @@ A modern family calendar and AI assistant PWA built with Next.js. FamilyHub help
 ### Prerequisites
 - Node.js 18+
 - npm or yarn
-- Redis instance (cloud or local)
+- Redis instance (e.g., [Upstash](https://upstash.com/) - free tier available)
+- API keys (see below)
 
 ### Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/family-hub.git
-cd family-hub
+git clone https://github.com/LNGU/FamilyHub.git
+cd FamilyHub
 
 # Install dependencies
 npm install
 
 # Set up environment variables
 cp .env.example .env
+# Edit .env with your API keys
 ```
+
+### Required API Keys
+
+| Service | Purpose | Get it from |
+|---------|---------|-------------|
+| **Azure OpenAI** | AI chat assistant | [Azure Portal](https://portal.azure.com/) - Create OpenAI resource |
+| **OpenWeather** | Weather data & forecasts | [OpenWeatherMap](https://openweathermap.org/api) - Free tier available |
+| **Google Maps** | Traffic routing | [Google Cloud Console](https://console.cloud.google.com/) - Enable Routes API |
+| **Google Geocoding** | Address to coordinates | [Google Cloud Console](https://console.cloud.google.com/) - Enable Geocoding API |
+| **Redis** | Cloud data storage | [Upstash](https://upstash.com/) - Free tier available |
+| **Google OAuth** | User authentication | [Google Cloud Console](https://console.cloud.google.com/) - OAuth credentials |
 
 ### Environment Variables
 
 Create a `.env` file with the following:
 
 ```env
-# AI Providers (at least one required)
-GROQ_API_KEY=your_groq_api_key
-CEREBRAS_API_KEY=your_cerebras_api_key
+# AI Provider (Azure OpenAI)
+AZURE_OPENAI_API_KEY=your_azure_openai_key
+AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com
+AZURE_OPENAI_DEPLOYMENT=gpt-4o-mini  # or your deployment name
 
-# External APIs
+# Weather API
 OPENWEATHER_API_KEY=your_openweather_api_key
-GOOGLE_MAPS_API_KEY=your_google_maps_api_key
 
-# Storage
-REDIS_URL=redis://your_redis_url
+# Google APIs
+GOOGLE_MAPS_API_KEY=your_google_maps_api_key        # For traffic routing
+GOOGLE_GEOCODING_API_KEY=your_geocoding_api_key    # For address lookup (can be same as Maps key)
 
-# Auth (optional - for Google Sign-in)
+# Storage (Redis)
+REDIS_URL=rediss://default:password@your-redis.upstash.io:6379
+
+# Authentication
 NEXTAUTH_URL=http://localhost:3000
-NEXTAUTH_SECRET=your_secret_key
-GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_client_secret
-ALLOWED_EMAILS=email1@gmail.com,email2@gmail.com
+NEXTAUTH_SECRET=generate_a_random_secret_here
+GOOGLE_CLIENT_ID=your_google_oauth_client_id
+GOOGLE_CLIENT_SECRET=your_google_oauth_client_secret
+ALLOWED_EMAILS=user1@gmail.com,user2@gmail.com  # Comma-separated list of allowed emails
 ```
+
+### Google Cloud Setup
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select existing
+3. Enable these APIs:
+   - **Routes API** (for traffic data)
+   - **Geocoding API** (for address lookup)
+4. Create API credentials:
+   - Go to "APIs & Services" → "Credentials"
+   - Create an API key for Maps/Geocoding
+   - Create OAuth 2.0 credentials for authentication
+5. Configure OAuth consent screen and add authorized redirect URIs:
+   - `http://localhost:3000/api/auth/callback/google` (development)
+   - `https://yourdomain.com/api/auth/callback/google` (production)
 
 ### Running the App
 
@@ -134,10 +179,17 @@ Type or speak commands like:
 - "How's the traffic to work?"
 - "일정 추가해줘" (Add an event - Korean)
 
-### Morning Briefing
-- Tap the **🌅 emoji** or say "morning briefing" for weather, commute, and schedule
-- Works through AI chat for consistent, smart responses
-- Available in English and Korean
+### Morning & Evening Briefings
+- Click the **🌅 Morning** or **🌙 Evening** buttons in the chat panel
+- **Morning briefing**: Weather for all locations, traffic to work, today's events
+- **Evening briefing**: Traffic from work/other locations to home, tomorrow's preview
+- Briefings are read aloud automatically
+
+### Managing Locations
+1. Click the **Settings** icon → **Locations** tab
+2. Add locations with name, address, and emoji
+3. Click **"Lookup missing coordinates"** to auto-geocode addresses
+4. Locations with coordinates enable accurate traffic routing
 
 ### Quick Action Shortcuts
 - **Emoji buttons** appear based on your query history
@@ -177,8 +229,8 @@ Type or speak commands like:
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌────────────┐  │
 │  │  /api/chat   │  │ /api/weather │  │ /api/traffic │  │/api/storage│  │
 │  │  AI Chat     │  │  OpenWeather │  │   Google     │  │   Redis    │  │
-│  │  Groq/       │  │  API         │  │   Routes     │  │   CRUD     │  │
-│  │  Cerebras    │  │              │  │    API       │  │            │  │
+│  │  Azure       │  │  API         │  │   Routes     │  │   CRUD     │  │
+│  │  OpenAI      │  │              │  │    API       │  │            │  │
 │  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘  └─────┬──────┘  │
 │         │                 │                 │                 │         │
 │  ┌──────┴────────────────┴─────────────────┴─────────────────┴──────┐  │
@@ -192,12 +244,12 @@ Type or speak commands like:
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                          EXTERNAL SERVICES                               │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌────────────┐  │
-│  │    Groq      │  │ OpenWeather  │  │   Google     │  │   Redis    │  │
-│  │   LLama 3.3  │  │     API      │  │  Routes API  │  │   Cloud    │  │
+│  │    Azure     │  │ OpenWeather  │  │   Google     │  │   Redis    │  │
+│  │   OpenAI     │  │     API      │  │  Routes API  │  │   Cloud    │  │
 │  └──────────────┘  └──────────────┘  └──────────────┘  └────────────┘  │
 │  ┌──────────────┐  ┌──────────────┐                                     │
-│  │  Cerebras    │  │ Google OAuth │                                     │
-│  │  (Fallback)  │  │ (Optional)   │                                     │
+│  │   Google     │  │ Google OAuth │                                     │
+│  │  Geocoding   │  │              │                                     │
 │  └──────────────┘  └──────────────┘                                     │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
@@ -307,11 +359,12 @@ src/
 
 | Category | Technology |
 |----------|------------|
-| Framework | Next.js 16 (App Router) |
+| Framework | Next.js 14 (App Router) |
 | UI | React 19, Tailwind CSS |
-| AI | Groq (LLama 3.3), Cerebras (fallback) |
+| AI | Azure OpenAI (GPT-4o-mini) |
 | Weather | OpenWeather API |
 | Traffic | Google Routes API |
+| Geocoding | Google Geocoding API |
 | Storage | Redis (ioredis), LocalStorage |
 | Auth | NextAuth.js (Google OAuth) |
 | Voice | Web Speech API (STT/TTS) |
@@ -322,17 +375,69 @@ src/
 
 ## 🔒 Authentication
 
-FamilyHub supports optional Google OAuth authentication:
+FamilyHub uses Google OAuth authentication to restrict access:
 
 1. Configure Google Cloud OAuth credentials
-2. Add authorized emails to `ALLOWED_EMAILS` env var
-3. Users not on the allowlist will see an error
-
-To disable auth, remove the NextAuth configuration.
+2. Add authorized emails to `ALLOWED_EMAILS` env var (comma-separated)
+3. Users not on the allowlist will see an access denied error
+4. Each family member can be linked to their email in Settings for personalized AI responses
 
 ---
 
-## 📄 License
+## 🚀 Deployment (Vercel)
+
+1. Push your code to GitHub
+2. Go to [Vercel](https://vercel.com/) and import your repository
+3. Add all environment variables from `.env` to Vercel project settings
+4. Update `NEXTAUTH_URL` to your production URL
+5. Add the production callback URL to Google OAuth:
+   - `https://yourdomain.vercel.app/api/auth/callback/google`
+6. Deploy!
+
+---
+
+## � Cost Estimates
+
+Most APIs have free tiers sufficient for family use:
+
+| Service | Free Tier | Notes |
+|---------|-----------|-------|
+| **Azure OpenAI** | Pay-as-you-go | ~$0.15/1M input tokens, ~$0.60/1M output tokens for GPT-4o-mini |
+| **OpenWeather** | 1,000 calls/day | More than enough for a family |
+| **Google Routes API** | $200/month credit | ~40,000 route calculations |
+| **Google Geocoding** | $200/month credit | ~40,000 geocoding requests |
+| **Upstash Redis** | 10,000 commands/day | Free tier sufficient |
+| **Vercel** | Hobby tier free | Perfect for personal projects |
+
+**Typical monthly cost for family use: $0-5**
+
+---
+
+## 🔧 Troubleshooting
+
+### Traffic data shows "no traffic information"
+- Ensure locations have coordinates (lat/lng), not just addresses
+- Go to Settings → Locations → Click "Lookup missing coordinates"
+- Check that `GOOGLE_MAPS_API_KEY` and `GOOGLE_GEOCODING_API_KEY` are set
+
+### Weather not loading
+- Verify `OPENWEATHER_API_KEY` is correct
+- Check that locations have valid addresses
+- OpenWeather works with city names or full addresses
+
+### Authentication errors
+- Ensure your email is in `ALLOWED_EMAILS`
+- Verify OAuth redirect URI matches your domain
+- Check `NEXTAUTH_SECRET` is set
+
+### AI not responding
+- Verify Azure OpenAI credentials and deployment name
+- Check Azure OpenAI resource is deployed and accessible
+- Review browser console for API errors
+
+---
+
+## �📄 License
 
 MIT License - feel free to use and modify for your family's needs!
 
@@ -340,7 +445,8 @@ MIT License - feel free to use and modify for your family's needs!
 
 ## 🙏 Acknowledgments
 
-- [Groq](https://groq.com/) for fast AI inference
+- [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service) for AI capabilities
 - [OpenWeather](https://openweathermap.org/) for weather data
-- [Google Maps Platform](https://developers.google.com/maps) for traffic routing
+- [Google Maps Platform](https://developers.google.com/maps) for traffic routing and geocoding
+- [Upstash](https://upstash.com/) for serverless Redis
 - [Vercel](https://vercel.com/) for Next.js hosting
