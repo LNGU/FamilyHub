@@ -21,12 +21,26 @@ A modern family calendar and AI assistant PWA built with Next.js. FamilyHub help
 - **Time-aware** - knows current time and timezone
 - **User-aware** - identifies signed-in user for personalized responses
 
-### 📱 Mobile-First PWA
-- **Installable PWA** - add to home screen on iOS/Android
+### 📱 Mobile-First Design
+- **Add to home screen** on iOS/Android for app-like experience
 - **Touch-friendly** slide-up chat panel (bottom sheet)
 - **Large floating action button** for easy chat access
 - **Voice input** with tap-to-speak button
 - **Auto voice response** when using speech input
+
+#### 📱 iOS Installation (Recommended)
+For the best experience on iOS with **full voice support**:
+
+1. Open FamilyHub in Safari
+2. Tap the **Share** button (square with arrow)
+3. Tap **"Add to Home Screen"**
+4. **⚠️ Important:** Uncheck **"Open as Web App"** (or leave it unchecked)
+5. Tap **"Add"**
+
+**Why not use PWA mode on iOS?**
+- PWA mode disables Web Speech API (voice input/output won't work)
+- PWA mode disables pinch-to-zoom (can't zoom in on calendar)
+- Opening as a regular bookmark preserves all browser features
 
 ### 🌅 Morning & Evening Briefings
 - **Persistent buttons** in chat for quick access to briefings
