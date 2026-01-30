@@ -1,0 +1,39 @@
+{
+  "name": "family-hub",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@ai-sdk/azure": "^3.0.18",
+    "ai": "^6.0.39",
+    "autoprefixer": "^10.4.23",
+    "cheerio": "^1.0.0",
+    "date-fns": "^4.1.0",
+    "ioredis": "^5.9.2",
+    "lucide-react": "^0.468.0",
+    "next": "^16.1.4",
+    "next-auth": "^4.24.13",
+    "pdf-parse": "^2.4.5",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "uuid": "^11.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/pdf-parse": "^1.1.5",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@types/uuid": "^10.0.0",
+    "eslint": "^9.16.0",
+    "eslint-config-next": "^15.1.0",
+    "postcss": "^8.4.49",
+    "sharp": "^0.34.5",
+    "tailwindcss": "^3.4.16",
+    "typescript": "^5.7.0"
+  }
+}

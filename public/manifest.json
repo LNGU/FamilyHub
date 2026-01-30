@@ -1,0 +1,35 @@
+{
+  "name": "FamilyHub",
+  "short_name": "FamilyHub",
+  "description": "Family calendar and AI assistant with voice control, weather, and traffic",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3b82f6",
+  "permissions": ["microphone"],
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "utilities"],
+  "shortcuts": [
+    {
+      "name": "Morning Briefing",
+      "short_name": "Morning",
+      "description": "Get your morning briefing",
+      "url": "/?action=morning",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
