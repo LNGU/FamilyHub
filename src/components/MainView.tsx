@@ -119,6 +119,8 @@ interface AIAction {
   category?: 'financial' | 'identity' | 'medical';
   key?: string;
   value?: string;
+  // PIN actions
+  pin?: string;
 }
 
 interface SecureInfo {
@@ -221,11 +223,29 @@ export function MainView() {
       console.error('Error fetching secure info:', err);
     }
   }, [session?.user?.email]);
+  
+  // PIN status state
+  const [hasPin, setHasPin] = useState<boolean>(false);
+  
+  // Fetch PIN status
+  const fetchPinStatus = useCallback(async () => {
+    if (!session?.user?.email) return;
+    try {
+      const res = await fetch('/api/pin');
+      if (res.ok) {
+        const data = await res.json();
+        setHasPin(data.hasPin || false);
+      }
+    } catch (err) {
+      console.error('Error fetching PIN status:', err);
+    }
+  }, [session?.user?.email]);
 
-  // Load secure info when user is signed in
+  // Load secure info and PIN status when user is signed in
   useEffect(() => {
     fetchSecureInfo();
-  }, [fetchSecureInfo]);
+    fetchPinStatus();
+  }, [fetchSecureInfo, fetchPinStatus]);
 
   useEffect(() => {
     const fetchStorageInfo = async () => {
@@ -394,9 +414,10 @@ export function MainView() {
         weatherData: null as string | null,
         trafficData: null as string | null,
         secureInfo: secureInfo,
+        hasPin: hasPin,
       };
     } catch {
-      return { familyMembers: [], schoolEvents: [], flightRestrictions: [], travelPlans: [], todayEvents: [], upcomingEvents: [], selectedDate: null, locations: [], currentUser: null, weatherData: null, trafficData: null, secureInfo: [] };
+      return { familyMembers: [], schoolEvents: [], flightRestrictions: [], travelPlans: [], todayEvents: [], upcomingEvents: [], selectedDate: null, locations: [], currentUser: null, weatherData: null, trafficData: null, secureInfo: [], hasPin: false };
     }
   };
 
@@ -820,6 +841,82 @@ export function MainView() {
             }
           } catch (err) {
             console.error('[executeAction] Error deleting secure info:', err);
+          }
+        }
+        break;
+      case 'set-pin':
+        if (action.pin) {
+          try {
+            const response = await fetch('/api/pin', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ pin: action.pin }),
+            });
+            if (response.ok) {
+              await fetchPinStatus();
+              console.log('[executeAction] PIN set successfully');
+              // Add a message to confirm PIN was set
+              setMessages(prev => [...prev, {
+                id: uuidv4(),
+                role: 'assistant',
+                content: language === 'ko-KR' 
+                  ? 'PIN이 성공적으로 설정되었습니다. 이제 민감한 정보를 볼 때 이 PIN을 사용하시면 됩니다.'
+                  : 'Your PIN has been set successfully. You can now use this PIN to access your sensitive information.',
+              }]);
+            } else {
+              const data = await response.json();
+              setMessages(prev => [...prev, {
+                id: uuidv4(),
+                role: 'assistant',
+                content: `Failed to set PIN: ${data.error || 'Unknown error'}`,
+              }]);
+            }
+          } catch (err) {
+            console.error('[executeAction] Error setting PIN:', err);
+          }
+        }
+        break;
+      case 'verify-pin-and-get':
+        if (action.pin && action.category && action.key) {
+          try {
+            const response = await fetch('/api/pin', {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                pin: action.pin,
+                category: action.category,
+                key: action.key,
+              }),
+            });
+            const data = await response.json();
+            
+            if (response.ok && data.success) {
+              // PIN verified, show the value
+              setMessages(prev => [...prev, {
+                id: uuidv4(),
+                role: 'assistant',
+                content: language === 'ko-KR'
+                  ? `PIN이 확인되었습니다. 요청하신 ${action.key}: ${data.value}`
+                  : `PIN verified. Your ${action.key}: ${data.value}`,
+              }]);
+              console.log('[executeAction] PIN verified, secret retrieved');
+            } else {
+              // PIN verification failed
+              const errorMsg = data.locked
+                ? (language === 'ko-KR' 
+                    ? `계정이 잠겼습니다. 15분 후에 다시 시도해주세요.`
+                    : `Account locked. Please try again in 15 minutes.`)
+                : (language === 'ko-KR'
+                    ? `PIN이 올바르지 않습니다. ${data.attemptsLeft}회 시도 남았습니다.`
+                    : `Incorrect PIN. ${data.attemptsLeft} attempts remaining.`);
+              setMessages(prev => [...prev, {
+                id: uuidv4(),
+                role: 'assistant',
+                content: errorMsg,
+              }]);
+            }
+          } catch (err) {
+            console.error('[executeAction] Error verifying PIN:', err);
           }
         }
         break;

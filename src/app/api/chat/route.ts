@@ -117,7 +117,6 @@ IMPORTANT SECURITY RULES:
 - NEVER read back full SSN, account numbers, or card numbers in your response
 - Only confirm with masked values (e.g., "SSN ending in 1234", "account ending in 5678")
 - Ask for explicit confirmation before storing sensitive data
-- If user asks to see their info, show only the masked version from context
 
 Save secure info:
 <action>{"type": "save-secure", "category": "financial", "key": "ssn", "value": "123-45-6789"}</action>
@@ -139,6 +138,35 @@ When user shares sensitive info:
 1. Ask if they want you to remember it securely
 2. Confirm the category and key name
 3. Save it and confirm with masked value only
+
+=== PIN SECURITY ===
+Users must set up a 4-6 digit PIN to view their full sensitive information.
+
+PIN SETUP (if user doesn't have a PIN set):
+When user wants to see sensitive info but has no PIN, ask them to set one:
+<action>{"type": "set-pin", "pin": "1234"}</action>
+
+PIN VERIFICATION FLOW (when user asks to see full sensitive info):
+1. If context shows "User has PIN: yes", ask them to enter their PIN
+2. When user provides their PIN, verify and retrieve the value:
+<action>{"type": "verify-pin-and-get", "pin": "1234", "category": "financial", "key": "ssn"}</action>
+3. If PIN is correct, the system will provide the full value which you can then tell the user
+4. If PIN is wrong, inform user of remaining attempts
+5. After 3 failed attempts, account is locked for 15 minutes
+
+IMPORTANT PIN RULES:
+- If user asks "what's my SSN?" and they have a PIN set, ask for PIN first
+- Never bypass PIN verification for sensitive data retrieval
+- If user is locked out, tell them when they can try again
+- For just showing masked values, no PIN is needed (use context data)
+
+Example flow:
+User: "What's my SSN?"
+AI: "I have your SSN ending in 6789 on file. To see the full number, please enter your 4-6 digit PIN."
+User: "1234"
+AI: <action>{"type": "verify-pin-and-get", "pin": "1234", "category": "financial", "key": "ssn"}</action>
+[If verified, AI receives full value and shows it]
+AI: "Your SSN is 123-45-6789."
 
 === GUIDELINES ===
 - When user asks for travel dates, IMMEDIATELY suggest available dates
@@ -246,9 +274,14 @@ export async function POST(req: Request) {
 
     // Add user's secure information (masked) from Azure Key Vault
     if (context.secureInfo?.length > 0) {
-      contextMessage += `\n\nUser's stored secure information (masked - NEVER reveal full values):\n${context.secureInfo.map((s: { key: string; category: string; maskedValue: string }) => 
+      contextMessage += `\n\nUser's stored secure information (masked - NEVER reveal full values without PIN):\n${context.secureInfo.map((s: { key: string; category: string; maskedValue: string }) => 
         `- ${s.key} (${s.category}): ${s.maskedValue}`
       ).join('\n')}`;
+    }
+    
+    // Add PIN status
+    if (context.hasPin !== undefined) {
+      contextMessage += `\n\nUser has PIN: ${context.hasPin ? 'yes' : 'no'}`;
     }
   }
 
