@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@ai-sdk/azure": "^3.0.18",
+    "@azure/identity": "^4.13.0",
+    "@azure/keyvault-secrets": "^4.10.0",
     "ai": "^6.0.39",
     "autoprefixer": "^10.4.23",
     "cheerio": "^1.0.0",
@@ -29,6 +31,7 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@types/uuid": "^10.0.0",
+    "dotenv": "^17.2.3",
     "eslint": "^9.16.0",
     "eslint-config-next": "^15.1.0",
     "postcss": "^8.4.49",

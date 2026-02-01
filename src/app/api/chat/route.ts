@@ -1,6 +1,8 @@
 import { createAzure } from '@ai-sdk/azure';
 import { generateText } from 'ai';
 import { NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { getSecretsMasked } from '@/lib/secure-vault';
 
 // Disable caching for this route - we need fresh time/weather data
 export const dynamic = 'force-dynamic';
@@ -108,6 +110,36 @@ Remove items:
 <action>{"type": "remove-flight-restriction", "memberName": "John", "title": "New Year's Day"}</action>
 <action>{"type": "remove-event", "title": "Event Title", "memberName": "John"}</action>
 
+=== SECURE INFORMATION STORAGE ===
+You can securely store the user's financial/identity information in Azure Key Vault.
+
+IMPORTANT SECURITY RULES:
+- NEVER read back full SSN, account numbers, or card numbers in your response
+- Only confirm with masked values (e.g., "SSN ending in 1234", "account ending in 5678")
+- Ask for explicit confirmation before storing sensitive data
+- If user asks to see their info, show only the masked version from context
+
+Save secure info:
+<action>{"type": "save-secure", "category": "financial", "key": "ssn", "value": "123-45-6789"}</action>
+<action>{"type": "save-secure", "category": "financial", "key": "bank_routing", "value": "021000021"}</action>
+<action>{"type": "save-secure", "category": "financial", "key": "bank_account", "value": "123456789"}</action>
+<action>{"type": "save-secure", "category": "identity", "key": "passport_number", "value": "123456789"}</action>
+<action>{"type": "save-secure", "category": "identity", "key": "drivers_license", "value": "D1234567"}</action>
+<action>{"type": "save-secure", "category": "medical", "key": "insurance_id", "value": "INS123456"}</action>
+
+Categories:
+- financial: SSN, bank accounts, routing numbers, credit cards
+- identity: passport, driver's license, state ID
+- medical: insurance IDs, member numbers
+
+Delete secure info:
+<action>{"type": "delete-secure", "category": "financial", "key": "ssn"}</action>
+
+When user shares sensitive info:
+1. Ask if they want you to remember it securely
+2. Confirm the category and key name
+3. Save it and confirm with masked value only
+
 === GUIDELINES ===
 - When user asks for travel dates, IMMEDIATELY suggest available dates
 - Be proactive about suggesting travel opportunities from school breaks
@@ -210,6 +242,13 @@ export async function POST(req: Request) {
       contextMessage += `\n\nCurrent traffic data:\n${context.trafficData}`;
     } else {
       console.log('[Chat API] WARNING: No traffic data in context');
+    }
+
+    // Add user's secure information (masked) from Azure Key Vault
+    if (context.secureInfo?.length > 0) {
+      contextMessage += `\n\nUser's stored secure information (masked - NEVER reveal full values):\n${context.secureInfo.map((s: { key: string; category: string; maskedValue: string }) => 
+        `- ${s.key} (${s.category}): ${s.maskedValue}`
+      ).join('\n')}`;
     }
   }
 

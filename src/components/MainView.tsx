@@ -115,6 +115,17 @@ interface AIAction {
   notes?: string;
   schoolCalendarUrl?: string;
   eventType?: EventType;
+  // Secure info actions
+  category?: 'financial' | 'identity' | 'medical';
+  key?: string;
+  value?: string;
+}
+
+interface SecureInfo {
+  category: string;
+  key: string;
+  maskedValue: string;
+  createdAt: string;
 }
 
 export function MainView() {
@@ -139,6 +150,9 @@ export function MainView() {
   
   // Voice state
   const [language, setLanguage] = useState<'en-US' | 'ko-KR'>('ko-KR');
+  
+  // Secure info state (from Azure Key Vault)
+  const [secureInfo, setSecureInfo] = useState<SecureInfo[]>([]);
   const { transcript, isListening, startListening, stopListening, isSupported: speechSupported, error: speechError } = useSpeechRecognition(language);
   const { speak, isSpeaking, isSupported: synthSupported } = useSpeechSynthesis();
   const [voiceMode, setVoiceMode] = useState(false);
@@ -193,6 +207,25 @@ export function MainView() {
       handleVoiceSubmit(transcript);
     }
   }, [transcript, isListening]);
+
+  // Fetch secure info from Azure Key Vault
+  const fetchSecureInfo = useCallback(async () => {
+    if (!session?.user?.email) return;
+    try {
+      const res = await fetch('/api/secure-info');
+      if (res.ok) {
+        const data = await res.json();
+        setSecureInfo(data.secrets || []);
+      }
+    } catch (err) {
+      console.error('Error fetching secure info:', err);
+    }
+  }, [session?.user?.email]);
+
+  // Load secure info when user is signed in
+  useEffect(() => {
+    fetchSecureInfo();
+  }, [fetchSecureInfo]);
 
   useEffect(() => {
     const fetchStorageInfo = async () => {
@@ -360,9 +393,10 @@ export function MainView() {
         } : null,
         weatherData: null as string | null,
         trafficData: null as string | null,
+        secureInfo: secureInfo,
       };
     } catch {
-      return { familyMembers: [], schoolEvents: [], flightRestrictions: [], travelPlans: [], todayEvents: [], upcomingEvents: [], selectedDate: null, locations: [], currentUser: null, weatherData: null, trafficData: null };
+      return { familyMembers: [], schoolEvents: [], flightRestrictions: [], travelPlans: [], todayEvents: [], upcomingEvents: [], selectedDate: null, locations: [], currentUser: null, weatherData: null, trafficData: null, secureInfo: [] };
     }
   };
 
@@ -744,6 +778,48 @@ export function MainView() {
             state.events.filter(e => e.type === 'travel' && e.id.startsWith(`travel-${plan.id}`))
               .forEach(e => removeEvent(e.id));
             removeTravelPlan(plan.id);
+          }
+        }
+        break;
+      case 'save-secure':
+        if (action.category && action.key && action.value) {
+          try {
+            const response = await fetch('/api/secure-info', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                category: action.category,
+                key: action.key,
+                value: action.value,
+              }),
+            });
+            if (response.ok) {
+              // Refresh secure info list
+              await fetchSecureInfo();
+              console.log('[executeAction] Saved secure info:', action.key);
+            } else {
+              console.error('[executeAction] Failed to save secure info');
+            }
+          } catch (err) {
+            console.error('[executeAction] Error saving secure info:', err);
+          }
+        }
+        break;
+      case 'delete-secure':
+        if (action.category && action.key) {
+          try {
+            const response = await fetch(`/api/secure-info?category=${action.category}&key=${action.key}`, {
+              method: 'DELETE',
+            });
+            if (response.ok) {
+              // Refresh secure info list
+              await fetchSecureInfo();
+              console.log('[executeAction] Deleted secure info:', action.key);
+            } else {
+              console.error('[executeAction] Failed to delete secure info');
+            }
+          } catch (err) {
+            console.error('[executeAction] Error deleting secure info:', err);
           }
         }
         break;
