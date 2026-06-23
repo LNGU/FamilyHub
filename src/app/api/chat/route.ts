@@ -300,14 +300,20 @@ export async function POST(req: Request) {
     if (!apiKey) {
       throw new Error('AZURE_OPENAI_API_KEY environment variable is not set');
     }
-    
+
+    // Endpoint format: https://<resource>.cognitiveservices.azure.com (new) or https://<resource>.openai.azure.com (old)
+    // The Vercel AI SDK Azure provider needs a baseURL pointing at /openai/deployments
+    const rawEndpoint = process.env.AZURE_OPENAI_ENDPOINT || 'https://familyhub-openai.openai.azure.com';
+    const endpoint = rawEndpoint.replace(/\/+$/, '');
+    const deployment = process.env.AZURE_OPENAI_DEPLOYMENT || 'gpt-4o-mini';
+
     const azure = createAzure({
-      resourceName: 'familyhub-openai',
+      baseURL: `${endpoint}/openai/deployments`,
       apiKey: apiKey,
     });
 
     const result = await generateText({
-      model: azure.chat('gpt-4o-mini'),
+      model: azure.chat(deployment),
       system: fullSystemPrompt,
       messages,
     });
@@ -332,7 +338,7 @@ export async function POST(req: Request) {
     }
     
     return NextResponse.json(
-      { error: 'Failed to get AI response. Please try again.' },
+      { error: 'Failed to get AI response. Please try again.', detail: errorMessage },
       { status: 500 }
     );
   }
