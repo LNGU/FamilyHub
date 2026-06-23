@@ -310,6 +310,8 @@ export async function POST(req: Request) {
     const azure = createAzure({
       baseURL: `${endpoint}/openai/deployments`,
       apiKey: apiKey,
+      useDeploymentBasedUrls: true,
+      apiVersion: '2024-10-01-preview',
     });
 
     const result = await generateText({
